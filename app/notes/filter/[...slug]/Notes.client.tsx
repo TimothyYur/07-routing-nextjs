@@ -18,7 +18,11 @@ function useDebounce<T>(value: T, delay: number): T {
   return debounced;
 }
 
-export default function NotesClient() {
+interface NotesClientProps {
+  tag: string;
+}
+
+export default function NotesClient({ tag }: NotesClientProps) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -26,8 +30,11 @@ export default function NotesClient() {
   const debouncedSearch = useDebounce(search, 500);
 
   const { data, isLoading, isError } = useQuery<FetchNotesResponse>({
-    queryKey: ['notes', page, debouncedSearch],
-    queryFn: () => fetchNotes(page, 10, debouncedSearch),
+    queryKey: ['notes', page, debouncedSearch, tag],
+    queryFn: () =>
+      tag === 'all'
+        ? fetchNotes(page, 10, debouncedSearch)
+        : fetchNotes(page, 10, debouncedSearch, tag),
     placeholderData: keepPreviousData,
   });
 
@@ -39,6 +46,7 @@ export default function NotesClient() {
           setPage(1);
         }}
       />
+
       {data && data.totalPages > 1 && (
         <Pagination
           pageCount={data.totalPages}
@@ -46,6 +54,7 @@ export default function NotesClient() {
           onPageChange={selected => setPage(selected + 1)}
         />
       )}
+
       <button onClick={() => setIsOpen(true)}>Create note +</button>
 
       {isLoading && <p>Loading...</p>}
